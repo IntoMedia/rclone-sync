@@ -2,6 +2,7 @@
 
 import sqlite3 as sl
 import sys
+import os
 
 con = sl.connect('methods.db')
 
@@ -44,14 +45,19 @@ def remove_syncs(id):
 
 
 def sync(local,remote):
-    sql = 'INSERT INTO SYNCS (local_dir, remote_dir) values(?, ?)'
-    data = [
-        (local, remote)
-    ]
-    with con:
-        con.executemany(sql, data)
+    status = os.system("""rclone copy '{}' '{}' """.format(local, remote))
 
-    print(f'sync configurated between {local} and {remote}')
+    if status == 0:
+        sql = 'INSERT INTO SYNCS (local_dir, remote_dir) values(?, ?)'
+        data = [
+            (local, remote)
+        ]
+        with con:
+            con.executemany(sql, data)
+
+        print(f'sync configurated between {local} and {remote}')
+    else:
+        print(f'An error happend :( We cannot able to transfer files from {local} to {remote}')
 
 
 if __name__ == '__main__':
