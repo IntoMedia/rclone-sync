@@ -7,9 +7,10 @@ import asyncio
 import time
 
 watchManager = pyinotify.WatchManager()
-mask = pyinotify.IN_DELETE | pyinotify.IN_MODIFY | pyinotify.IN_CREATE
+mask = pyinotify.IN_DELETE | pyinotify.IN_MODIFY | pyinotify.IN_CREATE | pyinotify.IN_OPEN | pyinotify.IN_ACCESS
 
 serverSync = False
+lastServerSync = 0
 
 
 def database():
@@ -34,6 +35,7 @@ def database():
 
 
 async def try_lasts():
+    sync_form_cloud()
     while True:
         con = sl.connect('methods.db')
         with con:
@@ -48,8 +50,8 @@ async def try_lasts():
                 data_del = [(row[0])]
                 con.execute(sql_del, data_del)
 
-        await asyncio.sleep(2)
-        sync_form_cloud()
+        #await asyncio.sleep(2)
+        #sync_form_cloud()
         await asyncio.sleep(120)
 
 
@@ -104,14 +106,20 @@ def sync_delete(path, file):
 
 
 def sync_form_cloud():
-    con = sl.connect('methods.db')
-    sql = 'SELECT id,local_dir,remote_dir FROM SYNCS'
-    with con:
-        rows = con.execute(sql)
-        for row in rows:
-            serverSync = True
-            status = os.system("""rclone sync '{}' '{}' """.format(row[2], row[1]))
-            serverSync = False
+    global lastServerSync, serverSync
+    if lastServerSync < time.time()-60:
+        lastServerSync = time.time()
+        print("BG")
+        con = sl.connect('methods.db')
+        sql = 'SELECT id,local_dir,remote_dir FROM SYNCS'
+        with con:
+            rows = con.execute(sql)
+            for row in rows:
+                lastServerSync = time.time()
+                serverSync = True
+                status = os.system("""rclone sync '{}' '{}' """.format(row[2], row[1]))
+                serverSync = False
+        lastServerSync = time.time()
 
 
 class EventHandler(pyinotify.ProcessEvent):
@@ -126,6 +134,16 @@ class EventHandler(pyinotify.ProcessEvent):
     def process_IN_MODIFY(self, event):
         if not serverSync:
             sync_copy(event.path, event.pathname)
+
+    def process_IN_OPEN(self, event):
+        if not serverSync:
+            if event.dir:
+                sync_form_cloud()
+
+    def process_IN_ACCESS(self, event):
+        if not serverSync:
+            if event.dir:
+                sync_form_cloud()
 
 
 if __name__ == '__main__':
