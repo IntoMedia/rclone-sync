@@ -109,7 +109,7 @@ def sync_form_cloud():
     global lastServerSync, serverSync
     if lastServerSync < time.time()-60:
         lastServerSync = time.time()
-        print("BG")
+
         con = sl.connect('methods.db')
         sql = 'SELECT id,local_dir,remote_dir FROM SYNCS'
         with con:
