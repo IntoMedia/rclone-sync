@@ -12,6 +12,7 @@
 # How is work?
 ### local files
 When a local file created, modified or deleted, the Rclone Sync immediatly catch this event, and sync the modifications on the cloud drive(s).
+If the sync failed, it automatically try again in every 2 minutes.
 ### Cloud / remote files
 The modifications on the remote cloud cannot detected, so the Rclone Sync use the [rclone sync](https://rclone.org/commands/rclone_sync/) command in the startup and every 2 minutes. This method sync the cloud to the local machine, changing the local files only. Doesn't transfer unchanged files, testing by size and modification time or MD5SUM. local files is updated to match cloud, including deleting files if necessary.
 ### When you configurated the sync
