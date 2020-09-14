@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sqlite3 as sl
 import os
+import threading
 from os.path import basename
 import pyinotify
 import asyncio
@@ -10,6 +11,9 @@ watchManager = pyinotify.WatchManager()
 mask = pyinotify.IN_DELETE | pyinotify.IN_MODIFY | pyinotify.IN_CREATE | pyinotify.IN_OPEN | pyinotify.IN_ACCESS
 
 serverSync = False
+clientSync = False
+lastRunning = 0
+tryLastSync = 0
 lastServerSync = 0
 
 
@@ -35,12 +39,22 @@ def database():
 
 
 async def try_lasts():
-    sync_form_cloud()
+    run_lasts()
+    await sync_form_cloud()
     while True:
+        run_lasts()
+        await asyncio.sleep(120)
+
+
+def run_lasts():
+    global tryLastSync, serverSync
+    if tryLastSync < time.time()-30:
+        tryLastSync = time.time()
         con = sl.connect('methods.db')
         with con:
             rows = con.execute('SELECT id,event,dir,file FROM METHODS')
             for row in rows:
+                tryLastSync = time.time()
                 if row[1] == 1:
                     sync_copy(row[2], row[3])
                 if row[1] == 2:
@@ -49,10 +63,6 @@ async def try_lasts():
                 sql_del = 'DELETE FROM METHODS WHERE id=?'
                 data_del = [(row[0])]
                 con.execute(sql_del, data_del)
-
-        #await asyncio.sleep(2)
-        #sync_form_cloud()
-        await asyncio.sleep(120)
 
 
 def set_watchers():
@@ -105,9 +115,13 @@ def sync_delete(path, file):
                 add_method(2, path, file)
 
 
-def sync_form_cloud():
-    global lastServerSync, serverSync
+async def sync_form_cloud():
+    global lastServerSync, serverSync, lastRunning, clientSync
+
     if lastServerSync < time.time()-60:
+        while clientSync or lastRunning > time.time()-10:
+            await asyncio.sleep(1)
+
         lastServerSync = time.time()
 
         con = sl.connect('methods.db')
@@ -124,26 +138,44 @@ def sync_form_cloud():
 
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
+        global lastRunning, clientSync
         if not serverSync:
+            lastRunning = time.time()
+            clientSync = True
             sync_copy(event.path, event.pathname)
+            clientSync = False
 
     def process_IN_DELETE(self, event):
+        global lastRunning, clientSync
         if not serverSync:
+            lastRunning = time.time()
+            clientSync = True
             sync_delete(event.path, event.pathname)
+            clientSync = False
 
     def process_IN_MODIFY(self, event):
+        global lastRunning, clientSync
         if not serverSync:
+            lastRunning = time.time()
+            clientSync = True
             sync_copy(event.path, event.pathname)
+            clientSync = False
 
     def process_IN_OPEN(self, event):
         if not serverSync:
-            if event.dir:
-                sync_form_cloud()
+            run_lasts()
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(sync_form_cloud())
+            loop.close()
 
     def process_IN_ACCESS(self, event):
         if not serverSync:
             if event.dir:
-                sync_form_cloud()
+                run_lasts()
+                loop = asyncio.new_event_loop()
+                loop.run_until_complete(sync_form_cloud())
+                loop.close()
+
 
 
 if __name__ == '__main__':
