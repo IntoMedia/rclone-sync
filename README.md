@@ -66,3 +66,9 @@ Tardigrade,
 Union,
 WebDAV,
 Yandex Disk
+
+# Development
+- [ ] improvement in multiple sync
+- [ ] Create Nautilus extension
+- [ ] Create Nemo extension
+- [ ] Create Caja extension
