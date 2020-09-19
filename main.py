@@ -2,7 +2,7 @@
 import sqlite3 as sl
 import os
 import threading
-from os.path import basename
+from os.path import normpath
 import pyinotify
 import asyncio
 import time
@@ -48,7 +48,7 @@ async def try_lasts():
 
 def run_lasts():
     global tryLastSync, serverSync
-    if tryLastSync < time.time()-30:
+    if tryLastSync < time.time() - 30:
         tryLastSync = time.time()
         con = sl.connect('methods.db')
         with con:
@@ -85,41 +85,46 @@ def add_method(event, path, file):
 
 
 def sync_copy(path, file):
-    con = sl.connect('methods.db')
-    sql = 'SELECT id,local_dir,remote_dir FROM SYNCS WHERE local_dir=?'
-    data = [
-        (path)
-    ]
-    with con:
-        rows = con.execute(sql, data)
-        for row in rows:
-            status = os.system("""rclone copy '{}' '{}' """.format(row[1], row[2]))
+    while path.count('/') > 1:
+        con = sl.connect('methods.db')
+        sql = 'SELECT id,local_dir,remote_dir FROM SYNCS WHERE local_dir=?'
+        data = [
+            (path)
+        ]
+        with con:
+            rows = con.execute(sql, data)
+            for row in rows:
 
-            if status != 0:
-                add_method(1, path, file)
+                status = os.system("""rclone copy '{}' '{}' """.format(row[1], row[2]))
+
+                if status != 0:
+                    add_method(1, path, file)
+        path = normpath(path+'/..')
 
 
 def sync_delete(path, file):
-    con = sl.connect('methods.db')
-    sql = 'SELECT id,local_dir,remote_dir FROM SYNCS WHERE local_dir=?'
-    data = [
-        (path)
-    ]
-    with con:
-        rows = con.execute(sql, data)
-        for row in rows:
-            a = file.replace(row[1], row[2])
-            status = os.system("""rclone delete '{}' """.format(a))
+    while path.count('/') > 1:
+        con = sl.connect('methods.db')
+        sql = 'SELECT id,local_dir,remote_dir FROM SYNCS WHERE local_dir=?'
+        data = [
+            (path)
+        ]
+        with con:
+            rows = con.execute(sql, data)
+            for row in rows:
+                a = file.replace(row[1], row[2])
+                status = os.system("""rclone delete '{}' """.format(a))
 
-            if status != 0:
-                add_method(2, path, file)
+                if status != 0:
+                    add_method(2, path, file)
+        path = normpath(path + '/..')
 
 
 async def sync_form_cloud():
     global lastServerSync, serverSync, lastRunning, clientSync
 
-    if lastServerSync < time.time()-60:
-        while clientSync or lastRunning > time.time()-10:
+    if lastServerSync < time.time() - 60:
+        while clientSync or lastRunning > time.time() - 10:
             await asyncio.sleep(1)
 
         lastServerSync = time.time()
@@ -175,7 +180,6 @@ class EventHandler(pyinotify.ProcessEvent):
                 loop = asyncio.new_event_loop()
                 loop.run_until_complete(sync_form_cloud())
                 loop.close()
-
 
 
 if __name__ == '__main__':
