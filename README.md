@@ -20,8 +20,9 @@ All local file copyed to the cloud drive (if has any).
 
 
 # Methods
+- `./option.py help` show help
 - `./option.py list-sync` list configurated sync(s)
-- `./option.py sync  local-dir remote-drive:/remote-dir` add a new sync
+- `./option.py sync  local_path remote-drive:/remote_path [sync_type]` add a new sync
 - `./option.py remove-sync id` remove an configurated sync by ID
 
 After you add or remove a sync, you need to restart the main.py!
