@@ -1,59 +1,56 @@
 #!/usr/bin/env python3
 
-import sqlite3 as sl
+import database
 import sys
 import os
 
-con = sl.connect('methods.db')
-
-def database():
-    con = sl.connect('methods.db')
-    with con:
-        con.execute("""
-            CREATE TABLE IF NOT EXISTS METHODS (
-                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                event INTEGER,
-                file TEXT,
-                dir TEXT
-            );
-        """)
-    with con:
-        con.execute("""
-            CREATE TABLE IF NOT EXISTS SYNCS (
-                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                local_dir TEXT,
-                remote_dir TEXT
-            );
-         """)
-
 def list_syncs():
-    with con:
-        data = con.execute("SELECT * FROM SYNCS")
-        for row in data:
-            print(row)
+    print(f"ID    Local path\tRemote path\tSync method".expandtabs(50))
+    print("-"*110)
+    data = database.get_syncs()
+    for row in data:
+        if row[3] is None:
+            method = 'two-way sync'
+        elif row[3] == 1:
+            method = 'local -> remote'
+        elif row[3] == 2:
+            method = 'remote -> local'
+        else:
+            method = '???'
+        print(f"{row[0]}    {row[1]}\t{row[2]}\t{method}".expandtabs(50))
 
 
 def remove_syncs(id):
-    sql = 'DELETE FROM SYNCS WHERE id=?'
-    data = [
-        (id)
-    ]
-    with con:
-        con.executemany(sql, data)
-
+    database.remove_syncs(id)
     print(f'sync deleted!')
 
 
-def sync(local,remote):
-    status = os.system("""rclone copy '{}' '{}' """.format(local, remote))
+def sync(local, remote, sync_type=None):
+    print(sync_type)
+    if sync_type == '1':
+        sync_type = 1
+        a = ''
+        while a != 'Y' and a != 'N' and a != 'y' and a != 'n':
+            a = input(f"Are you sure? This will delete all remote file in the directory: {remote}? [Y/N]")
+        if a=='Y' or a=='y':
+            status = os.system("""rclone sync '{}' '{}' """.format(local,remote))
+        else:
+            status = -1
+    elif sync_type == '2':
+        sync_type = 2
+        a = ''
+        while a != 'Y' and a != 'N' and a != 'y' and a != 'n':
+            a = input(f"Are you sure? This will delete all local file in the directory: {local}? [Y/N]")
+        if a=='Y' or a=='y':
+            status = os.system("""rclone sync '{}' '{}' """.format(remote, local))
+        else:
+            status = -1
+    else:
+        sync_type = None
+        status = os.system("""rclone copy '{}' '{}' """.format(local, remote))
 
     if status == 0:
-        sql = 'INSERT INTO SYNCS (local_dir, remote_dir) values(?, ?)'
-        data = [
-            (local, remote)
-        ]
-        with con:
-            con.executemany(sql, data)
+        database.add_sync(local, remote, sync_type)
 
         print(f'sync configurated between {local} and {remote}')
     else:
@@ -61,13 +58,15 @@ def sync(local,remote):
 
 
 if __name__ == '__main__':
-    database()
+    database.init()
     if len(sys.argv) > 1:
         if sys.argv[1] == 'sync':
-            if len(sys.argv) > 3:
+            if len(sys.argv) == 5:
+                sync(sys.argv[2], sys.argv[3],sys.argv[4])
+            elif len(sys.argv) == 4:
                 sync(sys.argv[2],sys.argv[3])
             else:
-                print('Not enough parameters! Usage: sync local_dir remote_dir')
+                print('Not enough parameters! Usage: sync local_path remote_path [sync_type]')
         elif sys.argv[1] == 'list-sync':
             list_syncs()
         elif sys.argv[1] == 'remove-sync':
@@ -75,7 +74,19 @@ if __name__ == '__main__':
                 remove_syncs(sys.argv[2])
             else:
                 print('Not enough parameters! Usage: remove-sync id')
+        elif sys.argv[1] == 'help':
+            print("="*14 + "  HELP  " + "="*14)
+            print()
+            print('Allowed methods:')
+            print(" sync    \tSet a new sync\tusage: sync local_path remote_path [sync_type]")
+            print(" list-sync\tlist configured sync")
+            print(" remove-sync\tRemove a configured sync\tusage: remove-sync id")
+            print()
+            print('Allowed sync types:')
+            print(" default\ttwo-way sync")
+            print("   1    \tlocal -> remote")
+            print("   2    \tremote -> local")
         else:
             print('Unexpected method! Allowed methods: sync, list-sync, remove-sync')
     else:
-        print('Select a method: sync - add a new sync, list-sync - list actual sync(s), remove-sync - remove an sync')
+        print('Select a method: help, sync, list-sync, remove-sync')
