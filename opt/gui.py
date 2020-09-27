@@ -59,7 +59,7 @@ def remove_drive():
 
 
 def add_provider():
-    global providers_list, new_window, elements
+    global providers_list, new_window, elements, remotes_list
     provider = providers_list[elements['add_new_drive_list'].curselection()[0]]
 
     name = elements['add_new_connection_name'].get()
@@ -67,6 +67,14 @@ def add_provider():
     new_window.destroy()
 
     status = os.system("""rclone config create '{}' '{}' """.format(name, provider['Prefix']))
+
+    remotes_str = os.popen("rclone config dump").read()
+    remotes_list_tmp = json.loads(remotes_str)
+    remotes_list = []
+    elements['remote_listbox'].delete(0, 'end')
+    for t in remotes_list_tmp:
+        remotes_list.append(t)
+        elements['remote_listbox'].insert(0, f"{t}")
 
 
 def add_new():
@@ -101,6 +109,22 @@ def add_new():
     button.pack()
 
 
+def update_sync_list():
+    elements['sync_listbox'].delete(0, 'end')
+    data = database.get_syncs()
+    for row in data:
+        sync_list.append(row)
+        if row[3] is None:
+            method = 'two-way sync'
+        elif row[3] == 1:
+            method = 'local -> remote'
+        elif row[3] == 2:
+            method = 'remote -> local'
+        else:
+            method = '???'
+        elements['sync_listbox'].insert(row[0], f"{row[1]} | {row[2]} | {method}")
+
+
 def add_new_sync():
     global new_window, remotes_list
     if elements['type'].current() == 0:
@@ -118,10 +142,11 @@ def add_new_sync():
                                               icon='warning')
             if response == "yes":
                 option.sync(elements['local_txt'].get(), elements['remote_txt'].get(), elements['type'].current())
+    update_sync_list()
 
 
 def modify_sync():
-    global new_window, remotes_list, elements
+    global new_window, remotes_list, elements, selected_id
     if elements['type'].current() == 0:
         option.modify_sync(selected_id, elements['local_txt'].get(), elements['remote_txt'].get())
     else:
@@ -139,13 +164,16 @@ def modify_sync():
             if response == "yes":
                 option.modify_sync(selected_id, elements['local_txt'].get(), elements['remote_txt'].get(),
                                    elements['type'].current())
+    update_sync_list()
 
 
 def remove_sync():
+    global selected_id
     response = messagebox.askquestion(f"Delete", f"Are you sure to delete?",
                                       icon='warning')
     if response == "yes":
         option.remove_syncs(selected_id)
+    update_sync_list()
 
 
 def select_sync_folder():
@@ -246,12 +274,16 @@ def home():
 
     elements['remote_listbox'] = Listbox(left_frame)
 
-    remotes_str = os.popen("rclone config dump").read()
-    remotes_list_tmp = json.loads(remotes_str)
-    remotes_list = []
-    for t in remotes_list_tmp:
-        remotes_list.append(t)
-        elements['remote_listbox'].insert(0, f"{t}")
+    try:
+        remotes_str = os.popen("rclone config dump").read()
+        remotes_list_tmp = json.loads(remotes_str)
+        remotes_list = []
+        for t in remotes_list_tmp:
+            remotes_list.append(t)
+            elements['remote_listbox'].insert(0, f"{t}")
+    except:
+        label = Label(left_frame, text="Please install rclone!")
+        label.pack()
 
     elements['remote_listbox'].pack(expand=1, fill='both')
 
@@ -283,13 +315,13 @@ def save_folder_sync(path, t):
                                                   f"Are you sure? This will delete all remote file in the remote directory!",
                                                   icon='warning')
                 if response == "yes":
-                    option.sync(path, elements[t]['remote'].get(), elements[t]['type'].current())
+                    option.sync(path, elements[t]['remote'].get(), elements[t]['type'].current(), 'Y')
             elif elements['type'].current() == 2:
                 response = messagebox.askquestion(f"Are you sure?",
                                                   f"Are you sure? This will delete all local file in the local directory!",
                                                   icon='warning')
                 if response == "yes":
-                    option.sync(path, elements[t]['remote'].get(), elements[t]['type'].current())
+                    option.sync(path, elements[t]['remote'].get(), elements[t]['type'].current(), 'Y')
 
 
 def folder_sync(path):
@@ -305,10 +337,16 @@ def folder_sync(path):
         sync_dirs[tmp[0] + '-' + x[1]] = x
 
     tab_control = ttk.Notebook(root_folder)
+    try:
+        remotes_str = os.popen("rclone config dump").read()
+        remotes_list_tmp = json.loads(remotes_str)
+        remotes_list = []
+    except:
+        label = Label(root_folder, text="Please install rclone!")
+        label.pack()
+        remotes_list_tmp = []
+        remotes_list = []
 
-    remotes_str = os.popen("rclone config dump").read()
-    remotes_list_tmp = json.loads(remotes_str)
-    remotes_list = []
     for t in remotes_list_tmp:
         elements[t] = {}
         remotes_list.append(t + ":/")

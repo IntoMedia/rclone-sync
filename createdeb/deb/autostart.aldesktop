@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Exec="python3 /opt/rclone-sync/main.py"
+Exec=python3 /opt/rclone-sync/main.py
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true

@@ -1,14 +1,14 @@
 # Rclone Sync
 #### Sync between your Linux computer and a cloud storage with rclone!
 
-## BETA 3
+## BETA 4
 
 # How to use?
-## GUI with Nautilus, Nemo or Caja
+## With Nautilus, Nemo or Caja
 - Firstly install [Rclone](https://rclone.org/downloads/)
 - After install [Rclone-Sync](https://github.com/IntoMedia/rclone-sync/releases/)
 - Open the Rclone-Sync: you can find it in the applications, the name: Sync
-- **Note: You need to log-out and log-in to work the sync properly**
+
 ## In terminal
 - Firstly install [Rclone](https://rclone.org/downloads/)
 - Add a cloud drive to the Rclone: `rclone config`, and [follow the interactive setup process](https://rclone.org/docs/)!
@@ -78,8 +78,9 @@ Yandex Disk
 
 # Development
 - [ ] improvement in multiple sync
+- [ ] Backup sync
 - [x] Create Nautilus extension
 - [x] Create Nemo extension
 - [x] Create Caja extension
-- [ ] improvement in the GUI
-- [ ] start sync without log-out and log-in
+- [x] improvement in the GUI
+- [x] start sync without log-out and log-in

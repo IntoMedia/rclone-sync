@@ -4,9 +4,10 @@ import database
 import sys
 import os
 
+
 def list_syncs():
     print(f"ID    Local path\tRemote path\tSync method".expandtabs(50))
-    print("-"*110)
+    print("-" * 110)
     data = database.get_syncs()
     for row in data:
         if row[3] is None:
@@ -20,8 +21,8 @@ def list_syncs():
         print(f"{row[0]}    {row[1]}\t{row[2]}\t{method}".expandtabs(50))
 
 
-def modify_sync(id,local,remote,type=None):
-    database.modify_sync(id,local,remote,type)
+def modify_sync(id, local, remote, sync_type=None):
+    database.modify_sync(id, local, remote, sync_type)
 
 
 def remove_syncs(id):
@@ -29,15 +30,14 @@ def remove_syncs(id):
     print(f'sync deleted!')
 
 
-def sync(local, remote, sync_type=None):
+def sync(local, remote, sync_type=None, a=''):
     print(sync_type)
     if sync_type == '1':
         sync_type = 1
-        a = ''
         while a != 'Y' and a != 'N' and a != 'y' and a != 'n':
             a = input(f"Are you sure? This will delete all remote file in the directory: {remote}? [Y/N]")
-        if a=='Y' or a=='y':
-            status = os.system("""rclone sync '{}' '{}' """.format(local,remote))
+        if a == 'Y' or a == 'y':
+            status = os.system("""rclone sync '{}' '{}' """.format(local, remote))
         else:
             status = -1
     elif sync_type == '2':
@@ -45,7 +45,7 @@ def sync(local, remote, sync_type=None):
         a = ''
         while a != 'Y' and a != 'N' and a != 'y' and a != 'n':
             a = input(f"Are you sure? This will delete all local file in the directory: {local}? [Y/N]")
-        if a=='Y' or a=='y':
+        if a == 'Y' or a == 'y':
             status = os.system("""rclone sync '{}' '{}' """.format(remote, local))
         else:
             status = -1
@@ -66,9 +66,9 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == 'sync':
             if len(sys.argv) == 5:
-                sync(sys.argv[2], sys.argv[3],sys.argv[4])
+                sync(sys.argv[2], sys.argv[3], sys.argv[4])
             elif len(sys.argv) == 4:
-                sync(sys.argv[2],sys.argv[3])
+                sync(sys.argv[2], sys.argv[3])
             else:
                 print('Not enough parameters! Usage: sync local_path remote_path [sync_type]')
         elif sys.argv[1] == 'list-sync':
@@ -79,7 +79,7 @@ if __name__ == '__main__':
             else:
                 print('Not enough parameters! Usage: remove-sync id')
         elif sys.argv[1] == 'help':
-            print("="*14 + "  HELP  " + "="*14)
+            print("=" * 14 + "  HELP  " + "=" * 14)
             print()
             print('Allowed methods:')
             print(" sync    \tSet a new sync\tusage: sync local_path remote_path [sync_type]")

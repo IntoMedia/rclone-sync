@@ -77,6 +77,16 @@ def add_sync(local, remote,sync_type=None):
         con.executemany(sql, data)
 
 
+def modify_sync(id,local,remote,sync_type=None):
+    sql = 'UPDATE SYNCS SET local_dir=?, remote_dir=?, type=? WHERE id=?'
+    data = [
+        (local, remote, sync_type, id)
+    ]
+    con = sl.connect(dbname)
+    with con:
+        con.executemany(sql, data)
+
+
 def remove_syncs(id):
     sql = 'DELETE FROM SYNCS WHERE id=?'
     data = [
@@ -84,7 +94,7 @@ def remove_syncs(id):
     ]
     con = sl.connect(dbname)
     with con:
-        con.executemany(sql, data)
+        con.execute(sql, data)
 
 
 def get_methods():

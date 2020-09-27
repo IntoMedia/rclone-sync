@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import database
 import os
-import threading
 from os.path import normpath
 import pyinotify
 import asyncio
@@ -15,6 +14,7 @@ clientSync = False
 lastRunning = 0
 tryLastSync = 0
 lastServerSync = 0
+watchList = []
 
 
 async def try_lasts():
@@ -22,7 +22,9 @@ async def try_lasts():
     await sync_form_cloud()
     while True:
         run_lasts()
-        await asyncio.sleep(120)
+        await asyncio.sleep(60)
+        set_watchers()
+        await asyncio.sleep(60)
 
 
 def run_lasts():
@@ -41,10 +43,13 @@ def run_lasts():
 
 
 def set_watchers():
+    global watchList
     data = database.get_syncs()
     for row in data:
-        print(f"watching: {row[1]}")
-        watchManager.add_watch(row[1], rec=True, mask=mask, auto_add=True)
+        if row[1] not in watchList:
+            print(f"watching: {row[1]}")
+            watchList.append(row[1])
+            watchManager.add_watch(row[1], rec=True, mask=mask, auto_add=True)
 
 
 def sync_copy(path, file):
