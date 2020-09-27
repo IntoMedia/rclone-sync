@@ -1,0 +1,15 @@
+Package: rclone-sync
+Version: 0.3-3
+License: MIT
+Vendor: kapcsolat@intomedia.hu
+Architecture: amd64
+Maintainer: IntoMedia <kapcsolat@intomedia.hu>
+Installed-Size: _size_
+Section: utilities
+Priority: extra
+Homepage: https://github.com/IntoMedia/rclone-sync
+Depends: python3, python3-pip, python3-tk, python-nautilus
+Description: Sync between your Linux computer and a cloud storage!
+ Sync between your Linux computer and a cloud storage!
+ For updates please visit: https://github.com/IntoMedia/rclone-sync
+

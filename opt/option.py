@@ -20,6 +20,10 @@ def list_syncs():
         print(f"{row[0]}    {row[1]}\t{row[2]}\t{method}".expandtabs(50))
 
 
+def modify_sync(id,local,remote,type=None):
+    database.modify_sync(id,local,remote,type)
+
+
 def remove_syncs(id):
     database.remove_syncs(id)
     print(f'sync deleted!')
