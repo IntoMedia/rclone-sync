@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Sync
+Icon=/opt/rclone-sync/rclone-sync.png
+Exec=python3 /opt/rclone-sync/gui.py
+Comment=rclone-sync
+Categories=Utility
+Terminal=false
