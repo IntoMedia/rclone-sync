@@ -2,7 +2,7 @@
 #### Sync between your Linux computer and a cloud storage with rclone!
 
 ## BETA 4
-
+![Logo](https://i.imgur.com/owxi5bi.png)
 # How to use?
 ## With Nautilus, Nemo or Caja
 - Firstly install [Rclone](https://rclone.org/downloads/)
@@ -16,6 +16,12 @@
 - open Rclone Sync dir in your terminal, eg.: `cd ~/rclone-sync`
 - Add sync to Rclone Sync: `./option.py sync local-dir/sync-dir remote:/` or you can sync just a specific remote directory:  `./option.py sync local-dir/sync-dir remote:/sync-dir`
 - Start Rclone Sync: `./main.py`. Optionally you can add this command to the Startup Applications. The startup script are: `sh -c "cd ~/rclone-sync && ./main.py"`
+
+![In Ubuntu](https://i.imgur.com/7ABvxKh.png)
+
+![In Ubuntu](https://i.imgur.com/liPxyyb.png)
+
+![In Linux Mint](https://i.imgur.com/O9AJ4Ok.png)
 
 # How is work?
 ### local files
@@ -78,7 +84,7 @@ Yandex Disk
 
 # Development
 - [ ] improvement in multiple sync
-- [ ] Backup sync
+- [x] Backup sync
 - [x] Create Nautilus extension
 - [x] Create Nemo extension
 - [x] Create Caja extension

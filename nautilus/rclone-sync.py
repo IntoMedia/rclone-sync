@@ -24,7 +24,7 @@ class MyItemExtension(GObject.GObject, Nautilus.MenuProvider):
             menuitem = Nautilus.MenuItem(name='MyItem::SomeItem',
                                          label='Sync settings',
                                          tip='Sync settings',
-                                         icon='')
+                                         icon='/opt/rclone-sync/rclone-sync.png')
 
             menuitem.connect('activate', self.on_menu_item_clicked, files)
             return menuitem,
