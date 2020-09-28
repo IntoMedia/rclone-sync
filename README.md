@@ -1,7 +1,7 @@
 # Rclone Sync
 #### Sync between your Linux computer and a cloud storage with rclone!
 
-## BETA 4
+## BETA 5
 ![Logo](https://i.imgur.com/owxi5bi.png)
 # How to use?
 ## With Nautilus, Nemo or Caja
