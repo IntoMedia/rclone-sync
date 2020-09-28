@@ -16,6 +16,8 @@ def list_syncs():
             method = 'local -> remote'
         elif row[3] == 2:
             method = 'remote -> local'
+        elif row[3] == 3:
+            method = 'backup'
         else:
             method = '???'
         print(f"{row[0]}    {row[1]}\t{row[2]}\t{method}".expandtabs(50))
@@ -32,7 +34,7 @@ def remove_syncs(id):
 
 def sync(local, remote, sync_type=None, a=''):
     print(sync_type)
-    if sync_type == '1':
+    if sync_type == 1 or sync_type == '1':
         sync_type = 1
         while a != 'Y' and a != 'N' and a != 'y' and a != 'n':
             a = input(f"Are you sure? This will delete all remote file in the directory: {remote}? [Y/N]")
@@ -40,7 +42,7 @@ def sync(local, remote, sync_type=None, a=''):
             status = os.system("""rclone sync '{}' '{}' """.format(local, remote))
         else:
             status = -1
-    elif sync_type == '2':
+    elif sync_type == 2 or sync_type == '2':
         sync_type = 2
         a = ''
         while a != 'Y' and a != 'N' and a != 'y' and a != 'n':
@@ -49,9 +51,13 @@ def sync(local, remote, sync_type=None, a=''):
             status = os.system("""rclone sync '{}' '{}' """.format(remote, local))
         else:
             status = -1
+    elif sync_type == 3 or sync_type == '3':
+        sync_type = 3
+        status = os.system("""rclone copy '{}' '{}' """.format(local, remote))
     else:
         sync_type = None
         status = os.system("""rclone copy '{}' '{}' """.format(local, remote))
+        status = os.system("""rclone copy '{}' '{}' """.format(remote, local))
 
     if status == 0:
         database.add_sync(local, remote, sync_type)
@@ -90,6 +96,7 @@ if __name__ == '__main__':
             print(" default\ttwo-way sync")
             print("   1    \tlocal -> remote")
             print("   2    \tremote -> local")
+            print("   3    \tBackup")
         else:
             print('Unexpected method! Allowed methods: sync, list-sync, remove-sync')
     else:

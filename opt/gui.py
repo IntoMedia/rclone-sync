@@ -120,6 +120,8 @@ def update_sync_list():
             method = 'local -> remote'
         elif row[3] == 2:
             method = 'remote -> local'
+        elif row[3] == 3:
+            method = 'backup'
         else:
             method = '???'
         elements['sync_listbox'].insert(row[0], f"{row[1]} | {row[2]} | {method}")
@@ -142,6 +144,8 @@ def add_new_sync():
                                               icon='warning')
             if response == "yes":
                 option.sync(elements['local_txt'].get(), elements['remote_txt'].get(), elements['type'].current())
+        elif elements['type'].current() == 3:
+            option.sync(elements['local_txt'].get(), elements['remote_txt'].get(), elements['type'].current())
     update_sync_list()
 
 
@@ -164,6 +168,9 @@ def modify_sync():
             if response == "yes":
                 option.modify_sync(selected_id, elements['local_txt'].get(), elements['remote_txt'].get(),
                                    elements['type'].current())
+        elif elements['type'].current() == 3:
+            option.modify_sync(selected_id, elements['local_txt'].get(), elements['remote_txt'].get(),
+                               elements['type'].current())
     update_sync_list()
 
 
@@ -212,18 +219,7 @@ def home():
 
     elements['sync_listbox'] = Listbox(list_frame)
 
-    data = database.get_syncs()
-    for row in data:
-        sync_list.append(row)
-        if row[3] is None:
-            method = 'two-way sync'
-        elif row[3] == 1:
-            method = 'local -> remote'
-        elif row[3] == 2:
-            method = 'remote -> local'
-        else:
-            method = '???'
-        elements['sync_listbox'].insert(row[0], f"{row[1]} | {row[2]} | {method}")
+    update_sync_list()
 
     elements['sync_listbox'].bind('<<ListboxSelect>>', sync_listbox_onselect)
     elements['sync_listbox'].pack(fill='x')
@@ -322,6 +318,8 @@ def save_folder_sync(path, t):
                                                   icon='warning')
                 if response == "yes":
                     option.sync(path, elements[t]['remote'].get(), elements[t]['type'].current(), 'Y')
+            elif elements['type'].current() == 3:
+                option.sync(path, elements[t]['remote'].get(), elements[t]['type'].current())
 
 
 def folder_sync(path):
