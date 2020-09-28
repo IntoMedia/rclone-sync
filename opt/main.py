@@ -13,7 +13,7 @@ serverSync = False
 clientSync = False
 lastRunning = 0
 tryLastSync = 0
-lastServerSync = 0
+lastServerSync = {}
 watchList = []
 
 
@@ -56,7 +56,7 @@ def sync_copy(path, file):
     while path.count('/') > 1:
         rows = database.get_syncs_by_dir(path)
         for row in rows:
-            if row[3] is None or row[3] == 1:
+            if row[3] is None or row[3] == 1 or row[3] == 3:
                 status = os.system("""rclone copy '{}' '{}' """.format(row[1], row[2]))
 
                 if status != 0:
@@ -77,23 +77,29 @@ def sync_delete(path, file):
         path = normpath(path + '/..')
 
 
-async def sync_form_cloud():
+async def sync_form_cloud(path=None):
     global lastServerSync, serverSync, lastRunning, clientSync
+    while path is None or path.count('/') > 1:
+        if path is None or path not in lastServerSync.keys() or lastServerSync[path] < time.time() - 30:
+            while clientSync or lastRunning > time.time() - 10:
+                await asyncio.sleep(1)
 
-    if lastServerSync < time.time() - 60:
-        while clientSync or lastRunning > time.time() - 10:
-            await asyncio.sleep(1)
+            if path is None:
+                rows = database.get_syncs()
+            else:
+                rows = database.get_syncs_by_dir(path)
+            for row in rows:
+                if row[3] is None or row[3] == 2:
+                    lastServerSync[row[1]] = time.time()
+                    serverSync = True
+                    status = os.system("""rclone sync '{}' '{}' """.format(row[2], row[1]))
+                    serverSync = False
+                    lastServerSync[row[1]] = time.time()
 
-        lastServerSync = time.time()
-
-        rows = database.get_syncs()
-        for row in rows:
-            if row[3] is None or row[3] == 2:
-                lastServerSync = time.time()
-                serverSync = True
-                status = os.system("""rclone sync '{}' '{}' """.format(row[2], row[1]))
-                serverSync = False
-        lastServerSync = time.time()
+        if path is None:
+            path = ''
+        else:
+            path = normpath(path + '/..')
 
 
 class EventHandler(pyinotify.ProcessEvent):
@@ -125,7 +131,7 @@ class EventHandler(pyinotify.ProcessEvent):
         if not serverSync:
             run_lasts()
             loop = asyncio.new_event_loop()
-            loop.run_until_complete(sync_form_cloud())
+            loop.run_until_complete(sync_form_cloud(event.path))
             loop.close()
 
     def process_IN_ACCESS(self, event):
@@ -133,7 +139,7 @@ class EventHandler(pyinotify.ProcessEvent):
             if event.dir:
                 run_lasts()
                 loop = asyncio.new_event_loop()
-                loop.run_until_complete(sync_form_cloud())
+                loop.run_until_complete(sync_form_cloud(event.path))
                 loop.close()
 
 
